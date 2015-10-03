@@ -1,22 +1,29 @@
+parameter_groups:
+  -
+    parameters:
+      - server_flavor ###
+      - server_image ###
+      - server_count ###
+    label: Server Settings
+  -
+    parameters:
+      - database_flavor
+      - database_size
+    label: Cloud Database Settings
+  -
+    parameters:
+      - load_balancer_hostname
+    label: Load Balancer Settings
+
+#####
+
 heat_template_version: 2013-05-23
 
 description: Creates a basic web hosting stack comprised of a cloud load balancer, two web servers and a cloud database.
 
-parameters:
-  image:
-    type: string
-    label: Image name or ID
-    description: Image to be used for compute instance
-    default: CentOS 6 (PVHVM)
-    constraints:
-      - allowed_values:
-        - Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)
-        - Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)
-        - Ubuntu 15.04 (Vivid Vervet) (PVHVM)
-        - CentOS 7 (PVHVM)
-        - Red Hat Enterprise Linux 6 (PVHVM)
-        - Red Hat Enterprise Linux 7 (PVHVM)
+#####
 
+parameters:
   flavor:
     type: string
     label: Flavor
@@ -36,6 +43,56 @@ parameters:
         - 8GB Standard Instance
         - 15GB Standard Instance
         - 30GB Standard Instance
+
+  image:
+    type: string
+    label: Image name or ID
+    description: Image to be used for compute instance
+    default: CentOS 6 (PVHVM)
+    constraints:
+      - allowed_values:
+        - Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)
+        - Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)
+        - Ubuntu 15.04 (Vivid Vervet) (PVHVM)
+        - CentOS 7 (PVHVM)
+        - Red Hat Enterprise Linux 6 (PVHVM)
+        - Red Hat Enterprise Linux 7 (PVHVM)
+
+  count:
+    type: number
+    label: Server Count
+    description: 'How many cloud servers do you want to deploy?'
+    default: 1
+    constraints:
+      -
+        range:
+          max: 7
+          min: 0
+          description: 'Must be between 0 and 7 servers.'
+
+  database_flavor:
+    type: string
+    label: Database memory
+    description: 'What size database do you require?'
+    default: 1GB Instance
+    constraints:
+      - allowed_values:
+        - 512MB Instance
+        - 1GB Instance
+        - 2GB Instance
+        - 4GB Instance
+        - 8GB Instance
+        - 16GB Instance
+
+  database_size:
+    type: number
+    label: Database Size
+    description: 'Amount of storage required for the Cloud Database in GB.'
+    default: 10
+    constraints:
+      - range:
+        min: 5
+        max: 150
 
 resources:
   my_instance:
