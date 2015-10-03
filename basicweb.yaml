@@ -1,0 +1,28 @@
+heat_template_version: 2013-05-23
+
+description: Creates a basic web hosting stack comprised of a cloud load balancer, two web servers and a cloud database.
+
+parameters:
+  image:
+    type: string
+    label: Image name or ID
+    description: Image to be used for compute instance
+    default: CentOS 6 (PV)
+  flavor:
+    type: string
+    label: Flavor
+    description: Type of instance (flavor) to be used
+    default: 1 GB General Purpose v1
+
+resources:
+  my_instance:
+    type: OS::Nova::Server
+    properties:
+      image: { get_param: image }
+      flavor: { get_param: flavor }
+
+outputs:
+  instance_ip:
+    description: IP address of the instance
+    value: { get_attr: [my_instance, first_address] }
+ 
