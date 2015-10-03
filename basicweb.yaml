@@ -7,12 +7,35 @@ parameters:
     type: string
     label: Image name or ID
     description: Image to be used for compute instance
-    default: CentOS 6 (PV)
+    default: CentOS 6 (PVHVM)
+    constraints:
+      - allowed_values:
+        - Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)
+        - Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)
+        - Ubuntu 15.04 (Vivid Vervet) (PVHVM)
+        - CentOS 7 (PVHVM)
+        - Red Hat Enterprise Linux 6 (PVHVM)
+        - Red Hat Enterprise Linux 7 (PVHVM)
+
   flavor:
     type: string
     label: Flavor
     description: Type of instance (flavor) to be used
     default: 1 GB General Purpose v1
+    constraints:
+      - allowed_values:
+        - 1 GB General Purpose v1
+        - 2 GB General Purpose v1
+        - 4 GB General Purpose v1
+        - 8 GB General Purpose v1
+        - 15 GB I/O v1
+        - 30 GB I/O v1
+        - 1GB Standard Instance
+        - 2GB Standard Instance
+        - 4GB Standard Instance
+        - 8GB Standard Instance
+        - 15GB Standard Instance
+        - 30GB Standard Instance
 
 resources:
   my_instance:
@@ -25,4 +48,3 @@ outputs:
   instance_ip:
     description: IP address of the instance
     value: { get_attr: [my_instance, first_address] }
- 
