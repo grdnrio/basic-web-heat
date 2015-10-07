@@ -68,7 +68,7 @@ parameters:
         range:
           max: 7
           min: 0
-          description: 'Must be between 0 and 7 servers.'
+    description: 'Must be between 0 and 7 servers.'
 
   database_flavor:
     type: string
@@ -98,8 +98,8 @@ resources:
   my_instance:
     type: OS::Nova::Server
     properties:
-      image: { get_param: image }
-      flavor: { get_param: flavor }
+      image: { get_param: server_image }
+      flavor: { get_param: server_flavor }
 
 outputs:
   instance_ip:
