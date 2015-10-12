@@ -1,113 +1,130 @@
-parameter_groups:
-  -
-    parameters:
-      - server_flavor ###
-      - server_image ###
-      - server_count ###
-    label: 'Server Settings'
-  -
-    parameters:
-      - database_flavor
-      - database_size
-    label: 'Cloud Database Settings'
-  -
-    parameters:
-      - load_balancer_hostname
-    label: 'Load Balancer Settings'
-
 #####
 
 heat_template_version: '2013-05-23'
-
 description: "Creates a basic web hosting stack comprised of a cloud load balancer, two web servers and a cloud database."
 
 #####
 
+parameter_groups:
+  - label: Server Settings
+    parameters:
+    - server_flavor
+    - image
+    - server_count
+
+  - label: Cloud DB Settings
+    parameters:
+    - db_storage
+    - db_flavor
+
 parameters:
-  flavor:
+  server_flavor:
+    label: Server Flavor
+    description: |
+      Rackspace Cloud Server RAM size and features to use. Defaults to '1 GB Performance'.
     type: string
-    label: "Flavor"
-    description: "Type of instance (flavor) to be used"
-    default: '1 GB General Purpose v1'
+    default: 1GB Standard Instance
     constraints:
-      -
-        allowed_values:
-          - '1 GB General Purpose v1'
-          - '2 GB General Purpose v1'
-          - '4 GB General Purpose v1'
-          - '8 GB General Purpose v1'
-          - '15 GB I/O v1'
-          - '30 GB I/O v1'
-          - '1GB Standard Instance'
-          - '2GB Standard Instance'
-          - '4GB Standard Instance'
-          - '8GB Standard Instance'
-          - '15GB Standard Instance'
-          - '30GB Standard Instance'
+      - allowed_values:
+        - 512MB Standard Instance
+        - 1GB Standard Instance
+        - 2GB Standard Instance
+        - 4GB Standard Instance
+        - 8GB Standard Instance
+        - 15GB Standard Instance
+        - 30GB Standard Instance
+        - 1 GB General Purpose v1
+        - general1-2
+        - general1-4
+        - general1-8
+        - performance1-1
+        - performance1-2
+        - performance1-4
+        - performance1-8
+
 
   image:
+    label: Server Operating system
+    description: |
+      Server image. Defaults to 'CentOS 6 (PVHVM)'.
     type: string
-    label: 'Image name or ID'
-    description: "Image to be used for compute instance"
-    default: 'CentOS 6 (PVHVM)'
+    default: CentOS 6 (PVHVM)
     constraints:
-      -
-        allowed_values:
-          - 'Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)'
-          - 'Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)'
-          - 'Ubuntu 15.04 (Vivid Vervet) (PVHVM)'
-          - 'CentOS 7 (PVHVM)'
-          - 'Red Hat Enterprise Linux 6 (PVHVM)'
-          - 'Red Hat Enterprise Linux 7 (PVHVM)'
+    - allowed_values:
+      - CentOS 6 (PVHVM)
+      - Ubuntu 12.04 LTS (Precise Pangolin) (PVHVM)
+      - Ubuntu 14.04 LTS (Trusty Tahr) (PVHVM)
+      - Ubuntu 15.04 (Vivid Vervet) (PVHVM)
+      - CentOS 7 (PVHVM)
+      - Red Hat Enterprise Linux 6 (PVHVM)
+      - Red Hat Enterprise Linux 7 (PVHVM)
 
-  count:
+  server_count:
+    label: Number of servers
+    description: |
+      The number of web servers to create. Default is '8'. Can be between 0 and 9.
     type: number
-    label: 'Server Count'
-    description: 'How many cloud servers do you want to deploy?'
     default: 2
     constraints:
-      -
-        range:
-          max: 10
-          min: 2
-      -
-    description: "Must be between 0 and 7 servers."
+    - range: { min: 1, max: 9 }
 
-  database_flavor:
-    type: string
-    label: 'Database memory'
-    description: "What size database do you require?"
-    default: '1GB Instance'
-    constraints:
-      -
-        allowed_values:
-          - '512MB Instance'
-          - '1GB Instance'
-          - '2GB Instance'
-          - '4GB Instance'
-          - '8GB Instance'
-          - '16GB Instance'
-
-  database_size:
+  db_storage:
+    label: DB storage
+    description: |
+      Disk size for DBaaS. Defaults to '5GB'.
     type: number
-    label: 'Database Size'
-    description: "Amount of storage required for the Cloud Database in GB."
-    default: 10
+    default: 5
     constraints:
-      -
-        range:
-          min: 5
-          max: 150
-      -
+    - range: { min: 1, max: 500 }
+
+  db_flavor:
+    label: DB flavor
+    description: |
+      The flavor (RAM size) of DBaaS instance to use. Defaults to '16GB Instance'.
+    type: string
+    default: 1GB Instance
+    constraints:
+    - allowed_values:
+      - 512MB Instance
+      - 1GB Instance
+      - 2GB Instance
+      - 4GB Instance
+      - 8GB Instance
+      - 16GB Instance
 
 resources:
-  my_instance:
-    type: OS::Nova::Server
+  load_balancer:
+    depends_on:
+      - cloud_servers
+    type: Rackspace::Cloud::LoadBalancer
     properties:
-      image: { get_param: server_image }
-      flavor: { get_param: server_flavor }
+      name: lb1
+      protocol: HTTP
+      algorithm: ROUND_ROBIN
+      port: 80
+      virtualIps:
+      - type: PUBLIC
+        ipVersion: IPV4
+      nodes:
+      - addresses: { get_attr: [cloud_servers, privateIPv4] }
+        port: 80
+        condition: ENABLED
 
-outputs:
-  instance_ip:
-    description: IP address of the instance
-    value: { get_attr: [my_instance, first_address] }
+  cloud_servers:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: server_count }
+      resource_def:
+        type: Rackspace::Cloud::Server
+        properties:
+          name: srv%index%
+          image: { get_param: image }
+          flavor: { get_param: server_flavor }
+          config_drive: true
+
+  database:
+    type: OS::Trove::Instance
+    properties:
+      name: db1
+      size: { get_param: db_storage }
+      flavor: { get_param: db_flavor }
