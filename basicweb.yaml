@@ -140,7 +140,7 @@ resources:
     properties:
       count: { get_param: server_count }
       resource_def:
-        type: Rackspace::Cloud::Server
+        type: OS::Nova::Server
         properties:
           name: srv%index%
           image: { get_param: image }
